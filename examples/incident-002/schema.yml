@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: fct_daily_revenue
+    description: "Daily revenue fact table. Fixed by ARIA — 2024-05-15T02:31:44Z"
+    columns:
+      - name: revenue_date
+        description: "Truncated to day"
+        data_tests:
+          - not_null
+          - unique
+
+      - name: daily_revenue
+        description: "Sum of completed payment amounts"
+        data_type: numeric
+        data_tests:
+          - not_null
+
+      - name: order_count
+        description: "Distinct orders per day"
+        data_type: integer
+
+      - name: payment_count
+        description: "Distinct payments per day"
+        data_type: integer

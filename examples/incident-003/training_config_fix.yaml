@@ -1,0 +1,40 @@
+# ARIA Auto-Fix: ml-churn-model-v4 training config
+# Incident: Feature column 'user_churn_score_v3' not found in ml_features_prod
+# Root cause: ml_features_prod updated to v4 schema — user_churn_score_v3 deprecated
+# Fix: Updated feature reference to use user_churn_score_v2 (current column in DataHub schema)
+# Generated: 2024-05-15T03:12:18Z
+# Column names verified against DataHub schema at investigation time
+
+model:
+  name: ml-churn-model-v4
+  version: "4.0.1"
+  type: gradient_boosting
+  framework: sklearn
+
+feature_store:
+  dataset: ml_features_prod
+  version: "4"  # updated from v3
+
+features:
+  # FIX: user_churn_score_v3 was deprecated in ml_features_prod v4
+  # ARIA verified user_churn_score_v2 exists in current DataHub schema
+  - user_churn_score_v2        # was: user_churn_score_v3
+  - user_engagement_score
+  - ltv_30d
+  - customer_id
+
+target:
+  column: churned_30d
+  type: binary
+
+training:
+  test_size: 0.2
+  random_state: 42
+  cv_folds: 5
+
+tracking:
+  experiment: churn-prediction
+  run_tags:
+    aria_fix: "true"
+    fix_timestamp: "2024-05-15T03:12:18Z"
+    breaking_change: "user_churn_score_v3_deprecated"
