@@ -2,13 +2,13 @@
 
 > **DataHub Agent Hackathon 2026** — Challenge 1 (Agents That Do Real Work) + Challenge 2 (Metadata-Aware Code Generation)
 
-ARIA is an autonomous AI agent that diagnoses broken data pipelines using DataHub as its context graph. When a dbt model fails, a DAG misses its SLA, or an ML training job crashes, ARIA reads DataHub's full metadata — lineage, schema, ownership, data contracts — reasons over it with Claude, generates production-ready fix artifacts, and writes incidents and tags back to the catalog. In under 60 seconds.
+ARIA is an autonomous AI agent that diagnoses broken data pipelines using DataHub as its context graph. When a dbt model fails, a DAG misses its SLA, or an ML training job crashes, ARIA reads DataHub's full metadata — lineage, schema, ownership, data contracts — reasons over it with Llama 3.3 70B via Groq, generates production-ready fix artifacts, and writes incidents and tags back to the catalog. In under 60 seconds.
 
 ---
 
 ## The Problem
 
-When a data pipeline breaks at 2am, an on-call engineer spends 60–90 minutes doing one thing: manually tracing lineage, reading schema history, figuring out what changed upstream, calculating blast radius, and writing a fix that uses the *actual* current column names. DataHub already has all the context to automate this. Nobody had built the agent that does.
+When a data pipeline breaks at 2am, an on-call engineer spends 60–90 minutes doing one thing: manually tracing lineage, reading schema history, figuring out what changed upstream, calculating blast radius, and writing a fix that uses the *actual* current column names. DataHub already has all the context to automate this. ARIA is the agent that does it.
 
 ---
 
@@ -16,85 +16,89 @@ When a data pipeline breaks at 2am, an on-call engineer spends 60–90 minutes d
 
 📹 **[Watch the 3-minute demo →](https://youtube.com/your-link-here)**
 
+## Live Demo
+
+🌐 **[Try ARIA live →](https://your-render-url.onrender.com)**
+
 ---
 
 ## How ARIA Works
 
-```
 Error message input
-       ↓
+↓
 Step 1 — Parse error → identify broken asset + error type
-       ↓
-Step 2 — Pull DataHub context via MCP:
-         • get_lineage (upstream + downstream)
-         • get_entities (schema, ownership, description, health)
-         • list_schema_fields
-         • getDataContract (assertion status)
-       ↓
-Step 3 — Claude reasons over metadata → root cause diagnosis
-       ↓
+↓
+Step 2 — Pull DataHub context:
+• Upstream lineage (what feeds the broken asset)
+• Downstream blast radius (what breaks next)
+• Schema, ownership, health status
+• Data contract assertion status
+↓
+Step 3 — LLM reasons over metadata → root cause diagnosis
+↓
 Step 4 — Generate fix artifacts:
-         • dbt SQL patch (using REAL column names from DataHub)
-         • Data contract YAML (prevents regression)
-         • Structured postmortem (blameless, PR-ready)
-       ↓
+• dbt SQL patch (using REAL column names from DataHub)
+• Data contract YAML (prevents regression)
+• Structured postmortem (blameless, PR-ready)
+↓
 Step 5 — Write back to DataHub:
-         • raiseIncident on broken asset + high-severity downstream
-         • addTag: ARIA:BreakingChange on upstream source
-         • updateDescription with investigation summary
-       ↓
-Full investigation report
-```
+• raiseIncident on broken asset + downstream
+• addTag: ARIA:BreakingChange on upstream source
+• updateDescription with investigation summary
+↓
+Full investigation report in under 60 seconds
+
 
 ---
 
 ## DataHub Integration
 
-ARIA uses DataHub at every step — both **reads** and **writes**:
+ARIA uses DataHub at every step — both reads and writes:
 
-### Reads (via DataHub MCP Server + GraphQL)
-| DataHub Tool | ARIA Use |
-|---|---|
-| `get_entities` | Schema, ownership, description, health status |
-| `get_lineage` | Upstream dependencies + downstream blast radius |
-| `list_schema_fields` | Full column list for fix generation |
-| `getDataContract` | Check if assertions exist; flag absence as prevention gap |
-| `search` | Resolve human asset names to URNs |
-
-### Writes (via DataHub GraphQL API)
+### Reads (GraphQL)
 | DataHub API | ARIA Use |
 |---|---|
-| `raiseIncident` | Flag broken asset and high-severity downstream assets |
-| `addTag` | Tag breaking source with `ARIA:BreakingChange` |
-| `updateDescription` | Document root cause and fix strategy on the asset |
-| `propose_lifecycle_stage` | Flag deprecated columns for review |
+| `search` | Resolve asset names to URNs |
+| `dataset.lineage (UPSTREAM)` | Find what feeds the broken asset |
+| `dataset.lineage (DOWNSTREAM)` | Calculate blast radius |
+| `dataset.schemaMetadata` | Get real column names for fix generation |
+| `dataset.ownership` | Identify who to page |
+| `dataset.dataContract` | Check if assertions exist |
+| `dataset.health` | Current health status |
+
+### Writes (GraphQL Mutations)
+| DataHub API | ARIA Use |
+|---|---|
+| `raiseIncident` | Flag broken asset and downstream |
+| `addTag` | Tag source with `ARIA:BreakingChange` |
+| `updateDescription` | Document root cause on the asset |
 
 ---
 
 ## Generated Artifacts
 
-Every ARIA investigation produces three artifacts that live in your repo:
+Every ARIA investigation produces three artifacts:
 
-### 1. dbt Fix (`model_name.sql`)
-A production-ready SQL file with correct column names pulled directly from DataHub's schema — not hallucinated. See [`examples/incident-001/fct_revenue.sql`](examples/incident-001/fct_revenue.sql).
+### 1. dbt Fix
+Production-ready SQL using correct column names pulled from DataHub — not hallucinated. See [`examples/incident-001/fct_revenue.sql`](examples/incident-001/fct_revenue.sql)
 
-### 2. Data Contract (`data-contract.yaml`)
-A DataHub-compatible assertion file targeting the upstream source, with schema assertions for the columns that broke, freshness SLAs, and quality checks. See [`examples/incident-001/data-contract.yaml`](examples/incident-001/data-contract.yaml).
+### 2. Data Contract
+DataHub-compatible YAML with schema assertions that would have caught the incident before production. See [`examples/incident-001/data-contract.yaml`](examples/incident-001/data-contract.yaml)
 
-### 3. Postmortem (`postmortem.md`)
-A structured, blameless incident report ready for Confluence or Notion. Includes timeline, root cause, blast radius, action items. See [`examples/incident-001/postmortem.md`](examples/incident-001/postmortem.md).
+### 3. Postmortem
+Structured blameless incident report with timeline, root cause, blast radius, and action items. See [`examples/incident-001/postmortem.md`](examples/incident-001/postmortem.md)
 
 ---
 
 ## Sample Outputs
 
-Three complete example investigations are included in [`examples/`](examples/):
+Three complete example investigations in [`examples/`](examples/):
 
-| Incident | Error Type | Blast Radius | ARIA Time |
-|---|---|---|---|
-| [001 — Column Rename](examples/incident-001/) | `COLUMN_RENAMED` | 3 downstream | 47s |
-| [002 — Freshness SLA](examples/incident-002/) | `FRESHNESS_SLA_MISSED` | 5 downstream | 38s |
-| [003 — ML Feature Missing](examples/incident-003/) | `COLUMN_MISSING` | 2 downstream (ML) | 52s |
+| Incident | Error Type | Blast Radius |
+|---|---|---|
+| [001 — Column Rename](examples/incident-001/) | `COLUMN_RENAMED` | 3 downstream |
+| [002 — Freshness SLA](examples/incident-002/) | `FRESHNESS_SLA_MISSED` | 5 downstream |
+| [003 — ML Feature Missing](examples/incident-003/) | `COLUMN_MISSING` | 2 downstream |
 
 ---
 
@@ -102,8 +106,8 @@ Three complete example investigations are included in [`examples/`](examples/):
 
 ### Prerequisites
 - Node.js 18+
-- An Anthropic API key
-- DataHub running locally OR the demo.datahub.com instance
+- Groq API key (free at [console.groq.com](https://console.groq.com))
+- DataHub running locally OR skip for demo mode
 
 ### 1. Clone and install
 ```bash
@@ -116,82 +120,70 @@ npm install
 ```bash
 cp .env.example .env
 # Edit .env:
-#   ANTHROPIC_API_KEY=your_key
-#   DATAHUB_URL=http://localhost:8080
-#   DATAHUB_TOKEN=your_datahub_pat
+#   GROQ_API_KEY=gsk_your_key_here
+#   DATAHUB_URL=http://localhost:8080   (optional)
+#   DATAHUB_TOKEN=your_pat_here        (optional)
 ```
 
-### 3. Start DataHub (if running locally)
-```bash
-pip install acryl-datahub
-datahub docker quickstart
-```
-
-### 4. Run ARIA
+### 3. Run
 ```bash
 npm start
 # Open http://localhost:3000
 ```
 
-> **Demo mode:** If DataHub isn't running, ARIA uses realistic mock data so you can see the full investigation flow with all five steps and all three artifacts.
+> **Demo mode:** If DataHub isn't running, ARIA uses realistic mock data so you can see the full investigation flow with all five steps and all three artifacts generated.
+
+---
+
+## Tech Stack
+
+- **DataHub** — context graph, lineage, schema, incidents API
+- **Llama 3.3 70B** (via Groq) — reasoning + artifact generation
+- **Node.js + Express** — backend
+- **Server-Sent Events** — live investigation progress stream
+- **Vanilla JS + CSS** — frontend (zero dependencies)
 
 ---
 
 ## API
 
-ARIA exposes two endpoints:
-
-### `POST /api/investigate` — Streaming (SSE)
-Returns a real-time event stream of investigation progress.
+### `POST /api/investigate` — Streaming SSE
 ```bash
 curl -X POST http://localhost:3000/api/investigate \
   -H "Content-Type: application/json" \
   -d '{"errorMessage": "dbt model fct_revenue failed — column payment_method_v2 not found"}'
 ```
 
-### `POST /api/investigate/sync` — JSON
-Returns the complete investigation report as JSON.
-
-### `GET /api/health`
-Returns server status and DataHub connectivity.
+### `POST /api/investigate/sync` — JSON response
+### `GET /api/health` — Server + DataHub status
 
 ---
 
-## Architecture
+## Project Structure
 
-```
-aria/
+aria-agent/
 ├── src/
-│   ├── index.js              # Express server
-│   ├── agent/
-│   │   ├── aria.js           # Main agent orchestrator
-│   │   └── generators/
-│   │       ├── dbt-fix.js    # dbt SQL patch generator
-│   │       ├── data-contract.js  # DataHub contract YAML
-│   │       └── postmortem.js # Blameless postmortem
-│   ├── datahub/
-│   │   └── client.js         # DataHub GraphQL + REST client
-│   └── routes/
-│       └── investigate.js    # API routes (SSE + sync)
+│ ├── index.js # Express server
+│ ├── agent/
+│ │ ├── aria.js # Main agent orchestrator
+│ │ └── generators/
+│ │ ├── dbt-fix.js # dbt SQL patch generator
+│ │ ├── data-contract.js # DataHub contract YAML
+│ │ └── postmortem.js # Blameless postmortem
+│ ├── datahub/
+│ │ └── client.js # DataHub GraphQL + REST
+│ └── routes/
+│ └── investigate.js # API routes (SSE + sync)
 ├── public/
-│   └── index.html            # Live investigation UI
+│ └── index.html # Investigation UI
 └── examples/
-    ├── incident-001/         # Column rename: full artifacts
-    ├── incident-002/         # Freshness SLA: full artifacts
-    └── incident-003/         # ML feature missing: full artifacts
-```
+├── incident-001/ # Column rename artifacts
+├── incident-002/ # Freshness SLA artifacts
+└── incident-003/ # ML feature missing artifacts
+
 
 ---
 
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE)
-
----
-
-## Built with
-
-- **DataHub** — context graph, lineage, schema, incidents API
-- **Claude** (`claude-sonnet-4-6`) — reasoning + artifact generation
-- **Node.js + Express** — backend
-- **Server-Sent Events** — live investigation progress stream
