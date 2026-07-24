@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARIA — Autonomous Root-cause Investigation Agent</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --text: #e8e8f0;
+    --muted: #7a7a8e;
+    --accent: #7c6af7;
+    --accent-dim: #3d3578;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #38bdf8;
+    --radius: 10px;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+
+  header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; }
+  header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .badge {
+    margin-left: auto;
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    height: calc(100vh - 73px);
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .error-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 12px;
+    resize: none;
+    height: 160px;
+    line-height: 1.6;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .error-input:focus { border-color: var(--accent); }
+  .error-input::placeholder { color: var(--muted); }
+
+  .btn-investigate {
+    width: 100%;
+    margin-top: 12px;
+    padding: 11px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-investigate:hover { opacity: 0.9; }
+  .btn-investigate:active { transform: scale(0.98); }
+  .btn-investigate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .examples { display: flex; flex-direction: column; gap: 6px; }
+
+  .example-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, color 0.15s;
+    line-height: 1.4;
+  }
+
+  .example-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── STEPS ── */
+  .steps-section { flex: 1; overflow-y: auto; padding: 20px; }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    opacity: 0.35;
+    transition: opacity 0.3s;
+  }
+
+  .step.active, .step.done { opacity: 1; }
+
+  .step-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    display: grid; place-items: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: background 0.3s, border-color 0.3s;
+  }
+
+  .step.active .step-icon {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  .step.done .step-icon {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,106,247,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(124,106,247,0); }
+  }
+
+  .step-text { font-size: 13px; padding-top: 5px; }
+  .step-label { font-weight: 600; color: var(--text); }
+  .step-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    background: var(--surface);
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: none;
+  }
+
+  .tab-content.active { display: block; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    text-align: center;
+    gap: 10px;
+  }
+
+  .empty-icon { font-size: 48px; opacity: 0.3; }
+  .empty-state h3 { font-size: 16px; font-weight: 600; color: var(--text); opacity: 0.5; }
+  .empty-state p { font-size: 13px; max-width: 280px; }
+
+  /* ── DIAGNOSIS CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .severity-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  .severity-CRITICAL { background: #3d1212; color: var(--red); }
+  .severity-HIGH { background: #3d2212; color: var(--amber); }
+  .severity-MEDIUM { background: #1e2a3d; color: var(--blue); }
+  .severity-LOW { background: #12312a; color: var(--green); }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-box {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+  .stat-value { font-size: 18px; font-weight: 700; color: var(--text); margin-top: 4px; }
+
+  /* ── BLAST RADIUS ── */
+  .asset-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .asset-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .asset-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-upstream { background: var(--blue); }
+  .dot-downstream { background: var(--amber); }
+
+  .asset-name { font-weight: 600; color: var(--text); flex: 1; }
+  .asset-urn { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: #0a0a0d;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    color: #c9d1d9;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .copy-btn:hover { color: var(--text); }
+
+  /* ── POSTMORTEM ── */
+  .postmortem {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  .postmortem h1, .postmortem h2, .postmortem h3 {
+    color: var(--text);
+    margin: 20px 0 8px;
+    font-weight: 600;
+  }
+
+  .postmortem h1 { font-size: 18px; }
+  .postmortem h2 { font-size: 15px; color: var(--accent); }
+  .postmortem h3 { font-size: 13px; }
+  .postmortem p { margin-bottom: 10px; }
+  .postmortem ul, .postmortem ol { padding-left: 20px; margin-bottom: 10px; }
+  .postmortem li { margin-bottom: 4px; }
+  .postmortem strong { color: var(--text); font-weight: 600; }
+  .postmortem code {
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">A</div>
+  <div>
+    <h1>ARIA</h1>
+    <p>Autonomous Root-cause Investigation Agent</p>
+  </div>
+  <span class="badge">Powered by DataHub + Claude</span>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Input + Progress -->
+  <div class="left-panel">
+
+    <div class="section">
+      <div class="section-label">Error Message</div>
+      <textarea id="errorInput" class="error-input"
+        placeholder="Paste your pipeline error here...
+
+e.g. dbt model 'fct_revenue' failed — column 'payment_method_v2' not found in source table"></textarea>
+      <button class="btn-investigate" id="investigateBtn" onclick="investigate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Investigate with ARIA
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Example Incidents</div>
+      <div class="examples">
+        <button class="example-btn" onclick="loadExample(0)">
+          💥 dbt model failed — column 'payment_method_v2' not found
+        </button>
+        <button class="example-btn" onclick="loadExample(1)">
+          ⏰ Airflow DAG 'daily_revenue_pipeline' failed — table not refreshed in 36h
+        </button>
+        <button class="example-btn" onclick="loadExample(2)">
+          📉 ML training job failed — feature column 'user_churn_score_v3' missing from feature store
+        </button>
+      </div>
+    </div>
+
+    <div class="steps-section">
+      <div class="section-label">Investigation Progress</div>
+      <div id="steps">
+        <div class="step" id="step-1">
+          <div class="step-icon">1</div>
+          <div class="step-text">
+            <div class="step-label">Parse error</div>
+            <div class="step-detail" id="step-1-detail">Identify broken asset and error type</div>
+          </div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="step-icon">2</div>
+          <div class="step-text">
+            <div class="step-label">Pull DataHub context</div>
+            <div class="step-detail" id="step-2-detail">Read lineage, schema, ownership, contracts</div>
+          </div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="step-icon">3</div>
+          <div class="step-text">
+            <div class="step-label">Diagnose root cause</div>
+            <div class="step-detail" id="step-3-detail">Reason over metadata context</div>
+          </div>
+        </div>
+        <div class="step" id="step-4">
+          <div class="step-icon">4</div>
+          <div class="step-text">
+            <div class="step-label">Generate fix artifacts</div>
+            <div class="step-detail" id="step-4-detail">dbt patch, data contract, migration notes</div>
+          </div>
+        </div>
+        <div class="step" id="step-5">
+          <div class="step-icon">5</div>
+          <div class="step-text">
+            <div class="step-label">Write back to DataHub</div>
+            <div class="step-detail" id="step-5-detail">Post incidents, tags, documentation</div>
+          </div>
+        </div>
+        <div class="step" id="step-6">
+          <div class="step-icon">✓</div>
+          <div class="step-text">
+            <div class="step-label">Investigation complete</div>
+            <div class="step-detail" id="step-6-detail">Report ready</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results tabs -->
+  <div class="right-panel">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('diagnosis')">Diagnosis</button>
+      <button class="tab" onclick="showTab('blast')">Blast Radius</button>
+      <button class="tab" onclick="showTab('dbt')">dbt Fix</button>
+      <button class="tab" onclick="showTab('contract')">Data Contract</button>
+      <button class="tab" onclick="showTab('postmortem')">Postmortem</button>
+    </div>
+
+    <div class="tab-content active" id="tab-diagnosis">
+      <div class="empty-state" id="empty-diagnosis">
+        <div class="empty-icon">🔍</div>
+        <h3>No investigation yet</h3>
+        <p>Paste a pipeline error on the left and click Investigate to start ARIA.</p>
+      </div>
+      <div id="diagnosis-content" style="display:none"></div>
+    </div>
+
+    <div class="tab-content" id="tab-blast">
+      <div class="empty-state" id="empty-blast">
+        <div class="empty-icon">🌊</div>
+        <h3>Blast radius analysis</h3>
+        <p>Will show upstream sources and downstream assets affected by the incident.</p>
+      </div>
+      <div id="blast-content" style="display:none"></div>
+    </div>
+
+    <div class="tab-content" id="tab-dbt">
+      <div class="empty-state" id="empty-dbt">
+        <div class="empty-icon">🔧</div>
+        <h3>dbt Fix Artifact</h3>
+        <p>ARIA will generate a production-ready dbt model using real schema from DataHub.</p>
+      </div>
+      <div id="dbt-content" style="display:none"></div>
+    </div>
+
+    <div class="tab-content" id="tab-contract">
+      <div class="empty-state" id="empty-contract">
+        <div class="empty-icon">📋</div>
+        <h3>Data Contract</h3>
+        <p>ARIA will generate a DataHub data contract that would have prevented this incident.</p>
+      </div>
+      <div id="contract-content" style="display:none"></div>
+    </div>
+
+    <div class="tab-content" id="tab-postmortem">
+      <div class="empty-state" id="empty-postmortem">
+        <div class="empty-icon">📝</div>
+        <h3>Postmortem</h3>
+        <p>A structured, blameless incident report will appear here.</p>
+      </div>
+      <div id="postmortem-content" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLES = [
+  `ERROR in model fct_revenue (models/finance/fct_revenue.sql)
+  Compilation Error
+  unknown column 'payment_method_v2' in 'field list'
+  
+  Traceback: models/finance/fct_revenue.sql referenced column payment_method_v2 which does not exist in source table raw.payments.
+  The source table schema was recently modified. Run aborted.`,
+
+  `[2024-05-15 02:14:33] DAG daily_revenue_pipeline FAILED
+  Task: check_data_freshness
+  
+  AssertionError: Table analytics.prod.fct_daily_revenue has not been updated in 36 hours.
+  Last refresh: 2024-05-13 18:02:11 UTC
+  SLA breached: data must refresh every 24h
+  Downstream dashboards: Revenue KPIs, Executive Summary, Finance Board View`,
+
+  `MLflow training job ml-churn-model-v4 FAILED at step: feature_extraction
+  
+  KeyError: 'user_churn_score_v3'
+  Feature column 'user_churn_score_v3' not found in feature store dataset ml_features_prod.
+  Available columns: user_churn_score_v2, user_engagement_score, ltv_30d
+  
+  This feature was referenced in training config: configs/churn_model_v4.yaml`
+];
+
+function loadExample(idx) {
+  document.getElementById('errorInput').value = EXAMPLES[idx];
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['diagnosis','blast','dbt','contract','postmortem'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === `tab-${name}`);
+  });
+}
+
+function setStep(n, status, detail) {
+  const el = document.getElementById(`step-${n}`);
+  if (!el) return;
+  el.className = `step ${status}`;
+  const icon = el.querySelector('.step-icon');
+  if (status === 'done') icon.textContent = '✓';
+  else if (status === 'active') icon.textContent = n;
+  if (detail) document.getElementById(`step-${n}-detail`).textContent = detail;
+}
+
+function copyCode(btn) {
+  const code = btn.nextElementSibling || btn.parentElement.querySelector('code');
+  const text = code ? code.textContent : btn.closest('.code-block').querySelector('code')?.textContent || '';
+  navigator.clipboard.writeText(text);
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+
+function renderDiagnosis(report) {
+  const d = report.diagnosis;
+  const el = document.getElementById('diagnosis-content');
+  document.getElementById('empty-diagnosis').style.display = 'none';
+  el.style.display = 'block';
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-label">Elapsed</div>
+        <div class="stat-value">${report.elapsed}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Severity</div>
+        <div class="stat-value">
+          <span class="severity-badge severity-${d.blastRadiusSeverity}">${d.blastRadiusSeverity}</span>
+        </div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Downstream Affected</div>
+        <div class="stat-value">${report.blastRadius.downstreamCount}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Est. Fix Time</div>
+        <div class="stat-value" style="font-size:14px">${d.estimatedFixTime}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Root Cause</div>
+      <p style="font-size:14px;font-weight:600;color:#e8e8f0;margin-bottom:10px">${d.rootCauseSummary}</p>
+      <p style="color:var(--muted);font-size:13px">${d.rootCauseDetail}</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Breaking Change</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:var(--surface2);padding:4px 10px;border-radius:20px;font-size:12px;font-family:var(--mono)">${d.breakingChangeType}</span>
+        <span style="background:var(--surface2);padding:4px 10px;border-radius:20px;font-size:12px">Source: <strong>${d.breakingChangeSource}</strong></span>
+      </div>
+      ${d.affectedColumns?.length ? `<p style="margin-top:10px;font-size:12px;color:var(--muted)">Affected columns: <code style="font-family:var(--mono)">${d.affectedColumns.join(', ')}</code></p>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Prevention Gap</div>
+      <p style="color:var(--muted);font-size:13px">${d.preventionGap}</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DataHub Write-back</div>
+      ${report.writebackResults.incidents.map(i => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="color:var(--red);font-size:12px">🚨 Incident raised on <strong>${i.asset}</strong></span>
+        </div>`).join('')}
+      ${report.writebackResults.tags.map(t => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="color:var(--amber);font-size:12px">🏷 Tagged: <code>${t}</code></span>
+        </div>`).join('')}
+      ${report.writebackResults.errors?.length ? `<p style="color:var(--muted);font-size:11px;margin-top:8px">Demo mode: DataHub writes simulated (connect DataHub to see real write-back)</p>` : ''}
+    </div>
+  `;
+}
+
+function renderBlast(report) {
+  const el = document.getElementById('blast-content');
+  document.getElementById('empty-blast').style.display = 'none';
+  el.style.display = 'block';
+
+  const upstream = report.blastRadius.upstream || [];
+  const downstream = report.blastRadius.downstream || [];
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">Blast Radius — ${upstream.length + downstream.length} Total Assets</div>
+      <p style="color:var(--muted);font-size:13px">${report.diagnosis.blastRadiusExplanation}</p>
+    </div>
+
+    <div style="margin-bottom:8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Upstream Sources (${upstream.length})</div>
+    <div class="asset-list" style="margin-bottom:20px">
+      ${upstream.length ? upstream.map(u => `
+        <div class="asset-item">
+          <div class="asset-dot dot-upstream"></div>
+          <div>
+            <div class="asset-name">${u.name || 'unnamed'}</div>
+            <div class="asset-urn">${u.urn}</div>
+          </div>
+        </div>`).join('') : '<div style="color:var(--muted);font-size:12px;padding:10px 0">No upstream lineage data</div>'}
+    </div>
+
+    <div style="margin-bottom:8px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Downstream Consumers (${downstream.length})</div>
+    <div class="asset-list">
+      ${downstream.length ? downstream.map(d => `
+        <div class="asset-item">
+          <div class="asset-dot dot-downstream"></div>
+          <div>
+            <div class="asset-name">${d.name || 'unnamed'}</div>
+            <div class="asset-urn">${d.urn}</div>
+          </div>
+        </div>`).join('') : '<div style="color:var(--muted);font-size:12px;padding:10px 0">No downstream lineage data</div>'}
+    </div>
+  `;
+}
+
+function renderDbt(report) {
+  const el = document.getElementById('dbt-content');
+  document.getElementById('empty-dbt').style.display = 'none';
+  el.style.display = 'block';
+
+  const fix = report.artifacts.dbtFix;
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Change Description</div>
+      <p style="font-size:13px;color:var(--muted)">${fix.changeDescription}</p>
+    </div>
+    <div class="card" style="background:transparent;border:none;padding:0">
+      <div class="card-title">${fix.modelName}.sql</div>
+    </div>
+    <div class="code-block" style="position:relative">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      <code>${escHtml(fix.sql)}</code>
+    </div>
+    <div class="card-title" style="margin-bottom:8px">schema.yml config</div>
+    <div class="code-block" style="position:relative">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      <code>${escHtml(fix.config)}</code>
+    </div>
+    <div class="card">
+      <div class="card-title">PR / Migration Note</div>
+      <p style="font-size:13px;color:var(--muted)">${fix.migrationNote}</p>
+    </div>
+  `;
+}
+
+function renderContract(report) {
+  const el = document.getElementById('contract-content');
+  document.getElementById('empty-contract').style.display = 'none';
+  el.style.display = 'block';
+
+  const yaml = report.artifacts.dataContract;
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">About this contract</div>
+      <p style="font-size:13px;color:var(--muted)">This DataHub data contract was generated by ARIA. It defines the assertions that <strong>would have caught this incident</strong> before it hit production. Add it to your repository and register it with DataHub to prevent regressions.</p>
+    </div>
+    <div class="code-block" style="position:relative">
+      <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      <code>${escHtml(typeof yaml === 'string' ? yaml : JSON.stringify(yaml, null, 2))}</code>
+    </div>
+  `;
+}
+
+function renderPostmortem(report) {
+  const el = document.getElementById('postmortem-content');
+  document.getElementById('empty-postmortem').style.display = 'none';
+  el.style.display = 'block';
+
+  const md = report.artifacts.postmortem || '';
+  el.innerHTML = `<div class="postmortem">${renderMarkdown(md)}</div>`;
+}
+
+function renderMarkdown(md) {
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[hup])/gm, '')
+    || md;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+async function investigate() {
+  const errorMessage = document.getElementById('errorInput').value.trim();
+  if (!errorMessage) return;
+
+  const btn = document.getElementById('investigateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Investigating…';
+
+  // Reset steps
+  for (let i = 1; i <= 6; i++) setStep(i, '', '');
+
+  try {
+    const res = await fetch('/api/investigate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ errorMessage }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const events = buffer.split('\n\n');
+      buffer = events.pop();
+
+      for (const event of events) {
+        const lines = event.split('\n');
+        const typeLine = lines.find(l => l.startsWith('event:'));
+        const dataLine = lines.find(l => l.startsWith('data:'));
+        if (!dataLine) continue;
+
+        const type = typeLine?.slice(7).trim() || 'message';
+        const payload = JSON.parse(dataLine.slice(5));
+
+        if (type === 'progress') {
+          const prev = payload.step - 1;
+          if (prev >= 1) setStep(prev, 'done', document.getElementById(`step-${prev}-detail`).textContent);
+          setStep(payload.step, 'active', payload.message);
+        }
+
+        if (type === 'complete') {
+          for (let i = 1; i <= 6; i++) setStep(i, 'done');
+          renderDiagnosis(payload);
+          renderBlast(payload);
+          renderDbt(payload);
+          renderContract(payload);
+          renderPostmortem(payload);
+          showTab('diagnosis');
+        }
+
+        if (type === 'error') {
+          console.error('ARIA error:', payload);
+          alert('Investigation failed: ' + payload.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Failed to connect to ARIA server: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Investigate with ARIA`;
+  }
+}
+
+// Allow Enter+Ctrl/Cmd to submit
+document.getElementById('errorInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) investigate();
+});
+</script>
+</body>
+</html>
