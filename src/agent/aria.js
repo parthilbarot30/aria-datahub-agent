@@ -42,7 +42,6 @@ export class ARIAAgent {
   async investigate(errorMessage, emitProgress) {
   const emit = emitProgress || (() => {});
   const startTime = Date.now();
-  console.log('INVESTIGATE CALLED:', errorMessage.slice(0, 50));
 
     // ── STEP 1: Identify broken asset ─────────────────────────────────────────
     emit({ step: 1, status: 'running', message: 'Parsing error to identify broken asset...' });
@@ -273,10 +272,10 @@ CRITICAL: Return ONLY the raw JSON object. No markdown, no backticks, no \`\`\`j
     if (diagnosis.breakingChangeSource && diagnosis.breakingChangeSource !== 'unknown') {
       try {
         await this.dh.addTag({
-          resourceUrn: context.primaryUrn,
-          tagName: 'ARIA:BreakingChange',
-        });
-        results.tags.push('ARIA:BreakingChange');
+  resourceUrn: context.primaryUrn,
+  tagName: 'ARIA-BreakingChange',  // changed : to -
+});
+        results.tags.push('ARIA-BreakingChange');
       } catch (e) {
         results.errors.push(`Failed to add tag: ${e.message}`);
       }
