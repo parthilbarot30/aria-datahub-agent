@@ -160,7 +160,7 @@ curl -X POST http://localhost:3000/api/investigate \
 ---
 
 ## Project Structure
-
+```
 aria-agent/
 ├── src/
 │ ├── index.js # Express server
@@ -180,7 +180,7 @@ aria-agent/
 ├── incident-001/ # Column rename artifacts
 ├── incident-002/ # Freshness SLA artifacts
 └── incident-003/ # ML feature missing artifacts
-
+```
 
 ---
 
