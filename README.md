@@ -12,13 +12,13 @@ When a data pipeline breaks at 2am, an on-call engineer spends 60–90 minutes d
 
 ---
 
-## Demo Video
+<!-- ## Demo Video
 
-📹 **[Watch the 3-minute demo →](https://youtube.com/your-link-here)**
+ 📹 **[Watch the 3-minute demo →](https://youtube.com/your-link-here)** 
 
 ## Live Demo
 
-🌐 **[Try ARIA live →](https://your-render-url.onrender.com)**
+🌐 **[Try ARIA live →](https://your-render-url.onrender.com)** -->
 
 ---
 
