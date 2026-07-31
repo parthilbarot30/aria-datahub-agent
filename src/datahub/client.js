@@ -6,17 +6,22 @@ import axios from "axios";
  */
 export class DataHubClient {
   constructor({ url, token }) {
-    this.url = url.replace(/\/$/, "");
-    this.gql = `${this.url}/api/graphql`;
-    this.headers = {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  }
+  this.url = url.replace(/\/$/, '');
+  this.gql = `${this.url}/api/graphql`;
+  this.headers = {
+    'Content-Type': 'application/json',
+    // Basic auth for local DataHub (datahub:datahub)
+    'Authorization': token 
+      ? `Bearer ${token}` 
+      : 'Basic ' + Buffer.from('datahub:datahub').toString('base64'),
+  };
+}
+
 
   async _gql(query, variables = {}) {
   const res = await axios.post(this.gql, { query, variables }, { headers: this.headers });
   if (res.data.errors) {
+    console.error('GQL ERRORS:', JSON.stringify(res.data.errors));
   }
   return res.data.data;
 }

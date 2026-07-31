@@ -37,6 +37,6 @@ app.listen(PORT, () => {
     console.warn('  ⚠  GROQ_API_KEY not set — set it in .env');
   }
   if (!process.env.DATAHUB_TOKEN) {
-    console.warn('  ℹ  DATAHUB_TOKEN not set — running in demo mode with mock data');
-  }
+  console.warn('  ℹ  DATAHUB_TOKEN not set — connecting without auth');
+}
 });

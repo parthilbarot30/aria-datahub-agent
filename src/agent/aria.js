@@ -75,7 +75,6 @@ export class ARIAAgent {
 
     // ── STEP 6: Compile report ─────────────────────────────────────────────────
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-
     const report = {
       id: `aria-${Date.now()}`,
       timestamp: new Date().toISOString(),
@@ -84,10 +83,17 @@ export class ARIAAgent {
       assetInfo,
       diagnosis,
       blastRadius: {
-        upstream: context.upstream.map(u => ({ urn: u.entity.urn, name: u.entity.name })),
-        downstream: context.downstream.map(d => ({ urn: d.entity.urn, name: d.entity.name })),
-        downstreamCount: context.downstreamCount,
-      },
+  upstream: context.upstream.map(u => ({
+    urn: u.entity.urn,
+    name: u.entity.name,
+    fields: u.entity?.schemaMetadata?.fields || []
+  })),
+  downstream: context.downstream.map(d => ({
+    urn: d.entity.urn,
+    name: d.entity.name
+  })),
+  downstreamCount: context.downstreamCount,
+},
       artifacts,
       writebackResults,
       postmortem: artifacts.postmortem,
@@ -128,12 +134,10 @@ Respond ONLY with a JSON object. No markdown, no preamble. Fields:
   }
 
   async _gatherContext(assetInfo) {
-    // Search for the asset URN
     let urns = [];
     try {
       urns = await this.dh.searchDataset(assetInfo.assetName);
     } catch (e) {
-      // DataHub might not be running — return mock context for demo
       return this._mockContext(assetInfo);
     }
 
