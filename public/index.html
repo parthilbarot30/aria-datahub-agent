@@ -1,821 +1,1205 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARIA — Autonomous Root-cause Investigation Agent</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f8f9fc;
-  --surface: #ffffff;
-  --surface2: #f1f3f9;
-  --border: #e2e6f0;
-  --border-strong: #c8d0e4;
-  --text: #0f1120;
-  --text2: #3d4460;
-  --muted: #8891b0;
-  --accent: #4f46e5;
-  --accent-light: #eef2ff;
-  --accent2: #6366f1;
-  --accent-glow: rgba(79,70,229,0.15);
-  --green: #059669;
-  --green-light: #ecfdf5;
-  --amber: #d97706;
-  --amber-light: #fffbeb;
-  --red: #dc2626;
-  --red-light: #fef2f2;
-  --blue: #0284c7;
-  --blue-light: #f0f9ff;
-  --mono: 'JetBrains Mono', monospace;
-  --sans: 'Space Grotesk', sans-serif;
-  --shadow-sm: 0 1px 3px rgba(15,17,32,0.08), 0 1px 2px rgba(15,17,32,0.04);
-  --shadow: 0 4px 12px rgba(15,17,32,0.08), 0 2px 4px rgba(15,17,32,0.04);
-  --shadow-lg: 0 12px 32px rgba(15,17,32,0.1), 0 4px 8px rgba(15,17,32,0.06);
-  --radius: 10px;
-}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ARIA — Autonomous Root-cause Investigation Agent</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f8f9fc;
+        --surface: #ffffff;
+        --surface2: #f1f3f9;
+        --border: #e2e6f0;
+        --border-strong: #c8d0e4;
+        --text: #0f1120;
+        --text2: #3d4460;
+        --muted: #8891b0;
+        --accent: #4f46e5;
+        --accent-light: #eef2ff;
+        --accent2: #6366f1;
+        --accent-glow: rgba(79, 70, 229, 0.15);
+        --green: #059669;
+        --green-light: #ecfdf5;
+        --amber: #d97706;
+        --amber-light: #fffbeb;
+        --red: #dc2626;
+        --red-light: #fef2f2;
+        --blue: #0284c7;
+        --blue-light: #f0f9ff;
+        --mono: "JetBrains Mono", monospace;
+        --sans: "Space Grotesk", sans-serif;
+        --shadow-sm:
+          0 1px 3px rgba(15, 17, 32, 0.08), 0 1px 2px rgba(15, 17, 32, 0.04);
+        --shadow:
+          0 4px 12px rgba(15, 17, 32, 0.08), 0 2px 4px rgba(15, 17, 32, 0.04);
+        --shadow-lg:
+          0 12px 32px rgba(15, 17, 32, 0.1), 0 4px 8px rgba(15, 17, 32, 0.06);
+        --radius: 10px;
+      }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 13px;
-  line-height: 1.6;
-  min-height: 100vh;
-}
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 13px;
+        line-height: 1.6;
+        min-height: 100vh;
+      }
 
-/* ── ANIMATED BACKGROUND ── */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background:
-    radial-gradient(ellipse 600px 400px at 10% 10%, rgba(79,70,229,0.04) 0%, transparent 70%),
-    radial-gradient(ellipse 400px 300px at 90% 80%, rgba(99,102,241,0.03) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
+      /* ── ANIMATED BACKGROUND ── */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background:
+          radial-gradient(
+            ellipse 600px 400px at 10% 10%,
+            rgba(79, 70, 229, 0.04) 0%,
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 400px 300px at 90% 80%,
+            rgba(99, 102, 241, 0.03) 0%,
+            transparent 70%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
 
-/* ── HEADER ── */
-.aria-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 24px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  box-shadow: var(--shadow-sm);
-  animation: slideDown 0.4s ease;
-}
+      /* ── HEADER ── */
+      .aria-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: var(--shadow-sm);
+        animation: slideDown 0.4s ease;
+      }
 
-@keyframes slideDown {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+      @keyframes slideDown {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
 
-.aria-logo {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  border-radius: 9px;
-  display: grid; place-items: center;
-  font-size: 16px; color: #fff;
-  box-shadow: 0 4px 12px rgba(79,70,229,0.3);
-  flex-shrink: 0;
-  animation: logoPulse 4s ease-in-out infinite;
-}
+      .aria-logo {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        flex-shrink: 0;
+        animation: logoPulse 4s ease-in-out infinite;
+      }
 
-@keyframes logoPulse {
-  0%, 100% { box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
-  50% { box-shadow: 0 4px 20px rgba(79,70,229,0.5); }
-}
+      @keyframes logoPulse {
+        0%,
+        100% {
+          box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        50% {
+          box-shadow: 0 4px 20px rgba(79, 70, 229, 0.5);
+        }
+      }
 
-.aria-brand { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
-.aria-sub { font-size: 11px; color: var(--muted); font-weight: 400; }
+      .aria-brand {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+      .aria-sub {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 400;
+      }
 
-.badge-powered {
-  margin-left: auto;
-  background: var(--accent-light);
-  border: 1px solid rgba(79,70,229,0.2);
-  color: var(--accent);
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
+      .badge-powered {
+        margin-left: auto;
+        background: var(--accent-light);
+        border: 1px solid rgba(79, 70, 229, 0.2);
+        color: var(--accent);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
 
-/* ── LAYOUT ── */
-.aria-layout {
-  display: grid;
-  grid-template-columns: 390px 1fr;
-  height: calc(100vh - 60px);
-  position: relative;
-  z-index: 1;
-}
+      /* ── LAYOUT ── */
+      .aria-layout {
+        display: grid;
+        grid-template-columns: 390px 1fr;
+        height: calc(100vh - 88px);
+        position: relative;
+        z-index: 1;
+      }
 
-/* ── LEFT PANEL ── */
-.left-panel {
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--surface);
-  animation: slideInLeft 0.5s ease;
-}
+      /* ── LEFT PANEL ── */
+      .left-panel {
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--surface);
+        animation: slideInLeft 0.5s ease;
+      }
 
-@keyframes slideInLeft {
-  from { transform: translateX(-16px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
+      @keyframes slideInLeft {
+        from {
+          transform: translateX(-16px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
 
-.panel-section {
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--border);
-}
+      .panel-section {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border);
+      }
 
-.section-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+      .section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-.section-label i { color: var(--accent); font-size: 9px; }
+      .section-label i {
+        color: var(--accent);
+        font-size: 9px;
+      }
 
-.error-input {
-  width: 100%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 11.5px;
-  padding: 12px 14px;
-  resize: none;
-  height: 145px;
-  line-height: 1.7;
-  transition: all 0.25s ease;
-  outline: none;
-}
+      .error-input {
+        width: 100%;
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        padding: 12px 14px;
+        resize: none;
+        height: 145px;
+        line-height: 1.7;
+        transition: all 0.25s ease;
+        outline: none;
+      }
 
-.error-input:focus {
-  border-color: var(--accent);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
-}
+      .error-input:focus {
+        border-color: var(--accent);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      }
 
-.error-input::placeholder { color: var(--muted); }
+      .error-input::placeholder {
+        color: var(--muted);
+      }
 
-.btn-investigate {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  border: none;
-  border-radius: var(--radius);
-  color: #fff;
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-  letter-spacing: -0.01em;
-}
+      .btn-investigate {
+        width: 100%;
+        margin-top: 10px;
+        padding: 10px;
+        background: linear-gradient(135deg, #4f46e5, #6366f1);
+        border: none;
+        border-radius: var(--radius);
+        color: #fff;
+        font-family: var(--sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+        letter-spacing: -0.01em;
+      }
 
-.btn-investigate::after {
-  content: '';
+      .btn-investigate::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.25s ease;
+      }
+
+      .btn-investigate:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.35);
+      }
+      .btn-investigate:hover::after {
+        opacity: 1;
+      }
+      .btn-investigate:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+      .btn-investigate:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      /* ── EXAMPLES ── */
+      .examples {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .example-btn {
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        color: var(--text2);
+        font-family: var(--sans);
+        font-size: 11.5px;
+        padding: 8px 12px;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.2s ease;
+        line-height: 1.4;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .example-btn:hover {
+        border-color: var(--accent);
+        background: var(--accent-light);
+        color: var(--accent);
+        transform: translateX(2px);
+      }
+
+      /* ── STEPS ── */
+      .steps-section {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 18px;
+      }
+
+      .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 9px 0;
+        opacity: 0.3;
+        transition: all 0.35s ease;
+      }
+
+      .step.active,
+      .step.done {
+        opacity: 1;
+      }
+
+      .step-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        flex-shrink: 0;
+        transition: all 0.35s ease;
+        color: var(--muted);
+      }
+
+      .step.active .step-icon {
+        border-color: var(--accent);
+        background: var(--accent-light);
+        color: var(--accent);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        animation: stepPulse 1.5s ease-in-out infinite;
+      }
+
+      .step.done .step-icon {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+        animation: checkBounce 0.4s ease;
+      }
+
+      @keyframes stepPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(79, 70, 229, 0.15);
+        }
+      }
+
+      @keyframes checkBounce {
+        0% {
+          transform: scale(0.8);
+        }
+        50% {
+          transform: scale(1.15);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .step-label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .step-detail {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
+
+      /* ── RIGHT PANEL ── */
+      .right-panel {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bg);
+        animation: fadeIn 0.5s ease 0.15s both;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* ── TABS ── */
+      .aria-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        padding: 0 20px;
+        background: var(--surface);
+        gap: 0;
+        overflow-x: auto;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .aria-tab {
+        padding: 14px 16px;
+        font-family: var(--sans);
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: -0.01em;
+      }
+
+      .aria-tab i {
+        font-size: 11px;
+      }
+      .aria-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+        font-weight: 600;
+      }
+      .aria-tab:hover:not(.active) {
+        color: var(--text2);
+        background: var(--surface2);
+      }
+
+      .tab-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      /* ── EMPTY STATE ── */
+      .empty-state {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        text-align: center;
+        gap: 12px;
+      }
+
+      .empty-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--accent-light);
+        border: 1.5px solid rgba(79, 70, 229, 0.15);
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        font-size: 22px;
+        color: rgba(79, 70, 229, 0.4);
+      }
+
+      .empty-state h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text2);
+      }
+      .empty-state p {
+        font-size: 12px;
+        max-width: 260px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+
+      /* ── CARDS ── */
+      .aria-card {
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.25s ease;
+        animation: cardIn 0.4s ease both;
+      }
+
+      @keyframes cardIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .aria-card:hover {
+        box-shadow: var(--shadow);
+        border-color: var(--border-strong);
+      }
+
+      .card-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .card-label i {
+        color: var(--accent);
+        font-size: 9px;
+      }
+
+      /* ── STAT GRID ── */
+      .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .stat-box {
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        box-shadow: var(--shadow-sm);
+        animation: cardIn 0.4s ease both;
+        transition: all 0.25s ease;
+        cursor: default;
+      }
+
+      .stat-box:hover {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 3px rgba(79, 70, 229, 0.06),
+          var(--shadow);
+        transform: translateY(-2px);
+      }
+
+      .stat-label {
+        font-size: 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 6px;
+        letter-spacing: -0.03em;
+      }
+
+      /* ── SEVERITY BADGES ── */
+      .severity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .severity-CRITICAL {
+        background: var(--red-light);
+        color: var(--red);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+      }
+      .severity-HIGH {
+        background: var(--amber-light);
+        color: var(--amber);
+        border: 1px solid rgba(217, 119, 6, 0.2);
+      }
+      .severity-MEDIUM {
+        background: var(--blue-light);
+        color: var(--blue);
+        border: 1px solid rgba(2, 132, 199, 0.2);
+      }
+      .severity-LOW {
+        background: var(--green-light);
+        color: var(--green);
+        border: 1px solid rgba(5, 150, 105, 0.2);
+      }
+
+      /* ── ASSET ITEMS ── */
+      .asset-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .asset-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: 9px;
+        padding: 10px 14px;
+        font-size: 12px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+        animation: cardIn 0.4s ease both;
+      }
+
+      .asset-item:hover {
+        border-color: var(--accent);
+        box-shadow: var(--shadow);
+        transform: translateX(3px);
+      }
+
+      .asset-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-upstream {
+        background: var(--blue);
+        box-shadow: 0 0 6px rgba(2, 132, 199, 0.3);
+      }
+      .dot-downstream {
+        background: var(--amber);
+        box-shadow: 0 0 6px rgba(217, 119, 6, 0.3);
+      }
+
+      .asset-name {
+        font-weight: 600;
+        color: var(--text);
+        flex: 1;
+      }
+      .asset-urn {
+        font-size: 10px;
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      /* ── CODE BLOCKS ── */
+      .code-block {
+        background: #fafafa;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        font-family: var(--mono);
+        font-size: 11.5px;
+        line-height: 1.8;
+        overflow-x: auto;
+        white-space: pre;
+        color: #1e1e3f;
+        margin-bottom: 12px;
+        position: relative;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .code-block::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), #6366f1);
+        border-radius: var(--radius) var(--radius) 0 0;
+      }
+
+      .copy-btn {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.btn-investigate:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,70,229,0.35); }
-.btn-investigate:hover::after { opacity: 1; }
-.btn-investigate:active { transform: translateY(0); box-shadow: none; }
-.btn-investigate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* ── EXAMPLES ── */
-.examples { display: flex; flex-direction: column; gap: 5px; }
-
-.example-btn {
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  color: var(--text2);
-  font-family: var(--sans);
-  font-size: 11.5px;
-  padding: 8px 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-  line-height: 1.4;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.example-btn:hover {
-  border-color: var(--accent);
-  background: var(--accent-light);
-  color: var(--accent);
-  transform: translateX(2px);
-}
-
-/* ── STEPS ── */
-.steps-section { flex: 1; overflow-y: auto; padding: 16px 18px; }
-
-.step {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 9px 0;
-  opacity: 0.3;
-  transition: all 0.35s ease;
-}
-
-.step.active, .step.done { opacity: 1; }
-
-.step-icon {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  display: grid; place-items: center;
-  font-size: 10px;
-  flex-shrink: 0;
-  transition: all 0.35s ease;
-  color: var(--muted);
-}
-
-.step.active .step-icon {
-  border-color: var(--accent);
-  background: var(--accent-light);
-  color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(79,70,229,0.1);
-  animation: stepPulse 1.5s ease-in-out infinite;
-}
-
-.step.done .step-icon {
-  background: var(--green);
-  border-color: var(--green);
-  color: #fff;
-  box-shadow: 0 0 0 3px rgba(5,150,105,0.15);
-  animation: checkBounce 0.4s ease;
-}
-
-@keyframes stepPulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
-  50% { box-shadow: 0 0 0 6px rgba(79,70,229,0.15); }
-}
-
-@keyframes checkBounce {
-  0% { transform: scale(0.8); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
-.step-label { font-size: 12.5px; font-weight: 600; color: var(--text); }
-.step-detail { font-size: 11px; color: var(--muted); margin-top: 1px; }
-
-/* ── RIGHT PANEL ── */
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--bg);
-  animation: fadeIn 0.5s ease 0.15s both;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── TABS ── */
-.aria-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  padding: 0 20px;
-  background: var(--surface);
-  gap: 0;
-  overflow-x: auto;
-  box-shadow: var(--shadow-sm);
-}
-
-.aria-tab {
-  padding: 14px 16px;
-  font-family: var(--sans);
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--muted);
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  background: none;
-  border-top: none;
-  border-left: none;
-  border-right: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  letter-spacing: -0.01em;
-}
-
-.aria-tab i { font-size: 11px; }
-.aria-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-.aria-tab:hover:not(.active) { color: var(--text2); background: var(--surface2); }
-
-.tab-content { flex: 1; overflow-y: auto; padding: 20px; display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-
-/* ── EMPTY STATE ── */
-.empty-state {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  text-align: center;
-  gap: 12px;
-}
-
-.empty-icon {
-  width: 60px; height: 60px;
-  background: var(--accent-light);
-  border: 1.5px solid rgba(79,70,229,0.15);
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  color: rgba(79,70,229,0.4);
-}
-
-.empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text2); }
-.empty-state p { font-size: 12px; max-width: 260px; line-height: 1.6; color: var(--muted); }
-
-/* ── CARDS ── */
-.aria-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 18px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.25s ease;
-  animation: cardIn 0.4s ease both;
-}
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.aria-card:hover { box-shadow: var(--shadow); border-color: var(--border-strong); }
-
-.card-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.card-label i { color: var(--accent); font-size: 9px; }
-
-/* ── STAT GRID ── */
-.stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.stat-box {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-  animation: cardIn 0.4s ease both;
-  transition: all 0.25s ease;
-  cursor: default;
-}
-
-.stat-box:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(79,70,229,0.06), var(--shadow);
-  transform: translateY(-2px);
-}
-
-.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
-.stat-value { font-size: 24px; font-weight: 700; color: var(--text); margin-top: 6px; letter-spacing: -0.03em; }
-
-/* ── SEVERITY BADGES ── */
-.severity-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.severity-CRITICAL { background: var(--red-light); color: var(--red); border: 1px solid rgba(220,38,38,0.2); }
-.severity-HIGH { background: var(--amber-light); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); }
-.severity-MEDIUM { background: var(--blue-light); color: var(--blue); border: 1px solid rgba(2,132,199,0.2); }
-.severity-LOW { background: var(--green-light); color: var(--green); border: 1px solid rgba(5,150,105,0.2); }
-
-/* ── ASSET ITEMS ── */
-.asset-list { display: flex; flex-direction: column; gap: 6px; }
-
-.asset-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 9px;
-  padding: 10px 14px;
-  font-size: 12px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
-  animation: cardIn 0.4s ease both;
-}
-
-.asset-item:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow);
-  transform: translateX(3px);
-}
-
-.asset-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-upstream { background: var(--blue); box-shadow: 0 0 6px rgba(2,132,199,0.3); }
-.dot-downstream { background: var(--amber); box-shadow: 0 0 6px rgba(217,119,6,0.3); }
-
-.asset-name { font-weight: 600; color: var(--text); flex: 1; }
-.asset-urn { font-size: 10px; color: var(--muted); font-family: var(--mono); }
-
-/* ── CODE BLOCKS ── */
-.code-block {
-  background: #fafafa;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  line-height: 1.8;
-  overflow-x: auto;
-  white-space: pre;
-  color: #1e1e3f;
-  margin-bottom: 12px;
-  position: relative;
-  box-shadow: var(--shadow-sm);
-}
-
-.code-block::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), #6366f1);
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-
-.copy-btn {
-  position: absolute;
-  top: 10px; right: 10px;
+  top: 10px;
+  right: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--muted);
   font-family: var(--sans);
   font-size: 11px;
-  padding: 4px 10px;
+  padding: 5px 10px;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
   box-shadow: var(--shadow-sm);
+  line-height: 1;
 }
 
-.copy-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+      .copy-btn:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: var(--accent-light);
+      }
 
-/* ── POSTMORTEM ── */
-.postmortem { font-size: 13px; line-height: 1.8; color: var(--text2); }
-.postmortem h1 { font-size: 18px; font-weight: 700; margin: 20px 0 8px; color: var(--text); letter-spacing: -0.03em; }
-.postmortem h2 { font-size: 13px; font-weight: 700; margin: 18px 0 8px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
-.postmortem h3 { font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: var(--text); }
-.postmortem p { margin-bottom: 10px; }
-.postmortem ul, .postmortem ol { padding-left: 20px; margin-bottom: 10px; }
-.postmortem li { margin-bottom: 5px; }
-.postmortem strong { color: var(--text); font-weight: 600; }
-.postmortem code {
-  background: var(--accent-light);
-  border: 1px solid rgba(79,70,229,0.15);
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--accent);
-}
+      /* ── POSTMORTEM ── */
+      .postmortem {
+        font-size: 13px;
+        line-height: 1.8;
+        color: var(--text2);
+      }
+      .postmortem h1 {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 20px 0 8px;
+        color: var(--text);
+        letter-spacing: -0.03em;
+      }
+      .postmortem h2 {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 18px 0 8px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .postmortem h3 {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 14px 0 6px;
+        color: var(--text);
+      }
+      .postmortem p {
+        margin-bottom: 10px;
+      }
+      .postmortem ul,
+      .postmortem ol {
+        padding-left: 20px;
+        margin-bottom: 10px;
+      }
+      .postmortem li {
+        margin-bottom: 5px;
+      }
+      .postmortem strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .postmortem code {
+        background: var(--accent-light);
+        border: 1px solid rgba(79, 70, 229, 0.15);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--accent);
+      }
 
-/* ── CHIPS ── */
-.incident-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--red-light); border: 1px solid rgba(220,38,38,0.2);
-  border-radius: 20px; padding: 4px 12px;
-  font-size: 11px; color: var(--red); margin-bottom: 6px;
-  animation: chipIn 0.4s ease both; font-weight: 500;
-}
+      /* ── CHIPS ── */
+      .incident-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--red-light);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 11px;
+        color: var(--red);
+        margin-bottom: 6px;
+        animation: chipIn 0.4s ease both;
+        font-weight: 500;
+      }
 
-.tag-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--amber-light); border: 1px solid rgba(217,119,6,0.2);
-  border-radius: 20px; padding: 4px 12px;
-  font-size: 11px; color: var(--amber); margin-bottom: 6px;
-  animation: chipIn 0.5s ease both; font-weight: 500;
-}
+      .tag-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--amber-light);
+        border: 1px solid rgba(217, 119, 6, 0.2);
+        border-radius: 20px;
+        padding: 4px 12px;
+        font-size: 11px;
+        color: var(--amber);
+        margin-bottom: 6px;
+        animation: chipIn 0.5s ease both;
+        font-weight: 500;
+      }
 
-@keyframes chipIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
+      @keyframes chipIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+      /* ── SCROLLBAR ── */
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--border-strong);
+      }
 
-/* ── SECTION DIVIDER ── */
-.section-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border), transparent);
-  margin: 14px 0;
-}
-</style>
-</head>
-<body>
-
-<header class="aria-header">
-  <div class="aria-logo"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-  <div>
-    <div class="aria-brand">ARIA</div>
-    <div class="aria-sub">Autonomous Root-cause Investigation Agent</div>
-  </div>
-  <div class="badge-powered">
-    <i class="fa-solid fa-bolt"></i>
-    Powered by DataHub + Llama
-  </div>
-</header>
-
-<div class="aria-layout">
-
-  <!-- LEFT PANEL -->
-  <div class="left-panel">
-
-    <div class="panel-section">
-      <div class="section-label">
-        <i class="fa-solid fa-terminal"></i>
-        Error Message
+      /* ── SECTION DIVIDER ── */
+      .section-divider {
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border),
+          transparent
+        );
+        margin: 14px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="aria-header">
+      <div class="aria-logo">
+        <i class="fa-solid fa-magnifying-glass-chart"></i>
       </div>
-      <textarea id="errorInput" class="error-input"
-        placeholder="Paste your pipeline error here...&#10;&#10;e.g. dbt model 'fct_revenue' failed — column 'payment_method_v2' not found"></textarea>
-      <button class="btn-investigate" id="investigateBtn" onclick="investigate()">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        Investigate with ARIA
-      </button>
-    </div>
-
-    <div class="panel-section">
-      <div class="section-label">
-        <i class="fa-solid fa-fire-flame-curved"></i>
-        Example Incidents
+      <div>
+        <div class="aria-brand">ARIA</div>
+        <div class="aria-sub">Autonomous Root-cause Investigation Agent</div>
       </div>
-      <div class="examples">
-        <button class="example-btn" onclick="loadExample(0)">
-          <i class="fa-solid fa-circle-exclamation" style="color:var(--red);margin-top:1px;flex-shrink:0"></i>
-          dbt model failed — column 'payment_method_v2' not found
-        </button>
-        <button class="example-btn" onclick="loadExample(1)">
-          <i class="fa-solid fa-clock" style="color:var(--amber);margin-top:1px;flex-shrink:0"></i>
-          Airflow DAG 'daily_revenue_pipeline' — SLA missed 36h
-        </button>
-        <button class="example-btn" onclick="loadExample(2)">
-          <i class="fa-solid fa-robot" style="color:var(--blue);margin-top:1px;flex-shrink:0"></i>
-          ML training failed — feature column 'user_churn_score_v3' missing
-        </button>
+      <div class="badge-powered">
+        <i class="fa-solid fa-bolt"></i>
+        Powered by DataHub + Llama
       </div>
-    </div>
+    </header>
 
-    <div class="steps-section">
-      <div class="section-label">
-        <i class="fa-solid fa-list-check"></i>
-        Investigation Progress
-      </div>
+    <div class="aria-layout">
+      <!-- LEFT PANEL -->
+      <div class="left-panel">
+        <div class="panel-section">
+          <div class="section-label">
+            <i class="fa-solid fa-terminal"></i>
+            Error Message
+          </div>
+          <textarea
+            id="errorInput"
+            class="error-input"
+            placeholder="Paste your pipeline error here...&#10;&#10;e.g. dbt model 'fct_revenue' failed — column 'payment_method_v2' not found"
+          ></textarea>
+          <button
+            class="btn-investigate"
+            id="investigateBtn"
+            onclick="investigate()"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Investigate with ARIA
+          </button>
+        </div>
 
-      <div class="step" id="step-1">
-        <div class="step-icon"><i class="fa-solid fa-microchip"></i></div>
-        <div>
-          <div class="step-label">Parse error</div>
-          <div class="step-detail" id="step-1-detail">Identify broken asset and error type</div>
+        <div class="panel-section">
+          <div class="section-label">
+            <i class="fa-solid fa-fire-flame-curved"></i>
+            Example Incidents
+          </div>
+          <div class="examples">
+            <button class="example-btn" onclick="loadExample(0)">
+              <i
+                class="fa-solid fa-circle-exclamation"
+                style="color: var(--red); margin-top: 1px; flex-shrink: 0"
+              ></i>
+              dbt model failed — column 'payment_method_v2' not found
+            </button>
+            <button class="example-btn" onclick="loadExample(1)">
+              <i
+                class="fa-solid fa-clock"
+                style="color: var(--amber); margin-top: 1px; flex-shrink: 0"
+              ></i>
+              Airflow DAG 'daily_revenue_pipeline' — SLA missed 36h
+            </button>
+            <button class="example-btn" onclick="loadExample(2)">
+              <i
+                class="fa-solid fa-robot"
+                style="color: var(--blue); margin-top: 1px; flex-shrink: 0"
+              ></i>
+              ML training failed — feature column 'user_churn_score_v3' missing
+            </button>
+          </div>
+        </div>
+
+        <div class="steps-section">
+          <div class="section-label">
+            <i class="fa-solid fa-list-check"></i>
+            Investigation Progress
+          </div>
+
+          <div class="step" id="step-1">
+            <div class="step-icon"><i class="fa-solid fa-microchip"></i></div>
+            <div>
+              <div class="step-label">Parse error</div>
+              <div class="step-detail" id="step-1-detail">
+                Identify broken asset and error type
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step-2">
+            <div class="step-icon"><i class="fa-solid fa-database"></i></div>
+            <div>
+              <div class="step-label">Pull DataHub context</div>
+              <div class="step-detail" id="step-2-detail">
+                Read lineage, schema, ownership, contracts
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step-3">
+            <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+            <div>
+              <div class="step-label">Diagnose root cause</div>
+              <div class="step-detail" id="step-3-detail">
+                Reason over metadata context
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step-4">
+            <div class="step-icon"><i class="fa-solid fa-code"></i></div>
+            <div>
+              <div class="step-label">Generate fix artifacts</div>
+              <div class="step-detail" id="step-4-detail">
+                dbt patch, data contract, postmortem
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step-5">
+            <div class="step-icon">
+              <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            </div>
+            <div>
+              <div class="step-label">Write back to DataHub</div>
+              <div class="step-detail" id="step-5-detail">
+                Post incidents, tags, documentation
+              </div>
+            </div>
+          </div>
+          <div class="step" id="step-6">
+            <div class="step-icon">
+              <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+            <div>
+              <div class="step-label">Investigation complete</div>
+              <div class="step-detail" id="step-6-detail">Report ready</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="step" id="step-2">
-        <div class="step-icon"><i class="fa-solid fa-database"></i></div>
-        <div>
-          <div class="step-label">Pull DataHub context</div>
-          <div class="step-detail" id="step-2-detail">Read lineage, schema, ownership, contracts</div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div class="aria-tabs">
+          <button class="aria-tab active" onclick="showTab('diagnosis')">
+            <i class="fa-solid fa-stethoscope"></i> Diagnosis
+          </button>
+          <button class="aria-tab" onclick="showTab('blast')">
+            <i class="fa-solid fa-burst"></i> Blast Radius
+          </button>
+          <button class="aria-tab" onclick="showTab('dbt')">
+            <i class="fa-solid fa-wrench"></i> dbt Fix
+          </button>
+          <button class="aria-tab" onclick="showTab('contract')">
+            <i class="fa-solid fa-file-contract"></i> Data Contract
+          </button>
+          <button class="aria-tab" onclick="showTab('postmortem')">
+            <i class="fa-solid fa-scroll"></i> Postmortem
+          </button>
+        </div>
+
+        <div class="tab-content active" id="tab-diagnosis">
+          <div class="empty-state" id="empty-diagnosis">
+            <div class="empty-icon">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+            </div>
+            <h3>No investigation yet</h3>
+            <p>
+              Paste a pipeline error on the left and click Investigate to start
+              ARIA.
+            </p>
+          </div>
+          <div id="diagnosis-content" style="display: none"></div>
+        </div>
+
+        <div class="tab-content" id="tab-blast">
+          <div class="empty-state" id="empty-blast">
+            <div class="empty-icon"><i class="fa-solid fa-burst"></i></div>
+            <h3>Blast radius analysis</h3>
+            <p>
+              Will show all upstream sources and downstream assets affected by
+              this incident.
+            </p>
+          </div>
+          <div id="blast-content" style="display: none"></div>
+        </div>
+
+        <div class="tab-content" id="tab-dbt">
+          <div class="empty-state" id="empty-dbt">
+            <div class="empty-icon"><i class="fa-solid fa-wrench"></i></div>
+            <h3>dbt Fix Artifact</h3>
+            <p>
+              ARIA generates production-ready SQL using real schema pulled from
+              DataHub.
+            </p>
+          </div>
+          <div id="dbt-content" style="display: none"></div>
+        </div>
+
+        <div class="tab-content" id="tab-contract">
+          <div class="empty-state" id="empty-contract">
+            <div class="empty-icon">
+              <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <h3>Data Contract</h3>
+            <p>
+              A DataHub contract that would have caught this incident before
+              production.
+            </p>
+          </div>
+          <div id="contract-content" style="display: none"></div>
+        </div>
+
+        <div class="tab-content" id="tab-postmortem">
+          <div class="empty-state" id="empty-postmortem">
+            <div class="empty-icon"><i class="fa-solid fa-scroll"></i></div>
+            <h3>Postmortem</h3>
+            <p>
+              A structured blameless incident report ready for Confluence or
+              Notion.
+            </p>
+          </div>
+          <div id="postmortem-content" style="display: none"></div>
         </div>
       </div>
-      <div class="step" id="step-3">
-        <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
-        <div>
-          <div class="step-label">Diagnose root cause</div>
-          <div class="step-detail" id="step-3-detail">Reason over metadata context</div>
-        </div>
-      </div>
-      <div class="step" id="step-4">
-        <div class="step-icon"><i class="fa-solid fa-code"></i></div>
-        <div>
-          <div class="step-label">Generate fix artifacts</div>
-          <div class="step-detail" id="step-4-detail">dbt patch, data contract, postmortem</div>
-        </div>
-      </div>
-      <div class="step" id="step-5">
-        <div class="step-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
-        <div>
-          <div class="step-label">Write back to DataHub</div>
-          <div class="step-detail" id="step-5-detail">Post incidents, tags, documentation</div>
-        </div>
-      </div>
-      <div class="step" id="step-6">
-        <div class="step-icon"><i class="fa-solid fa-flag-checkered"></i></div>
-        <div>
-          <div class="step-label">Investigation complete</div>
-          <div class="step-detail" id="step-6-detail">Report ready</div>
-        </div>
-      </div>
     </div>
-  </div>
+    <footer
+      style="
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 28px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        font-size: 10px;
+        color: var(--muted);
+        z-index: 100;
+        gap: 16px;
+      "
+    >
+      <span
+        ><i
+          class="fa-solid fa-circle"
+          style="color: var(--green); font-size: 6px; margin-right: 4px"
+        ></i
+        >ARIA v1.0.0</span
+      >
+      <span>DataHub Agent Hackathon 2026</span>
+      <span style="margin-left: auto">
+        <i class="fa-solid fa-keyboard" style="margin-right: 3px"></i>
+        Ctrl+Enter to investigate
+      </span>
+    </footer>
 
-  <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <div class="aria-tabs">
-      <button class="aria-tab active" onclick="showTab('diagnosis')">
-        <i class="fa-solid fa-stethoscope"></i> Diagnosis
-      </button>
-      <button class="aria-tab" onclick="showTab('blast')">
-        <i class="fa-solid fa-burst"></i> Blast Radius
-      </button>
-      <button class="aria-tab" onclick="showTab('dbt')">
-        <i class="fa-solid fa-wrench"></i> dbt Fix
-      </button>
-      <button class="aria-tab" onclick="showTab('contract')">
-        <i class="fa-solid fa-file-contract"></i> Data Contract
-      </button>
-      <button class="aria-tab" onclick="showTab('postmortem')">
-        <i class="fa-solid fa-scroll"></i> Postmortem
-      </button>
-    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const EXAMPLES = [
+        `ERROR in model fct_revenue (models/finance/fct_revenue.sql)\nCompilation Error\nunknown column 'payment_method_v2' in 'field list'\n\nTraceback: models/finance/fct_revenue.sql referenced column payment_method_v2 which does not exist in source table raw.payments.\nThe source table schema was recently modified. Run aborted.`,
+        `[2024-05-15 02:14:33] DAG daily_revenue_pipeline FAILED\nTask: check_data_freshness\n\nAssertionError: Table analytics.prod.fct_daily_revenue has not been updated in 36 hours.\nLast refresh: 2024-05-13 18:02:11 UTC\nSLA breached: data must refresh every 24h\nDownstream dashboards: Revenue KPIs, Executive Summary, Finance Board View`,
+        `MLflow training job ml-churn-model-v4 FAILED at step: feature_extraction\n\nKeyError: 'user_churn_score_v3'\nFeature column 'user_churn_score_v3' not found in feature store dataset ml_features_prod.\nAvailable columns: user_churn_score_v2, user_engagement_score, ltv_30d`,
+      ];
 
-    <div class="tab-content active" id="tab-diagnosis">
-      <div class="empty-state" id="empty-diagnosis">
-        <div class="empty-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
-        <h3>No investigation yet</h3>
-        <p>Paste a pipeline error on the left and click Investigate to start ARIA.</p>
-      </div>
-      <div id="diagnosis-content" style="display:none"></div>
-    </div>
+      function loadExample(idx) {
+        document.getElementById("errorInput").value = EXAMPLES[idx];
+        document.getElementById("errorInput").focus();
+      }
 
-    <div class="tab-content" id="tab-blast">
-      <div class="empty-state" id="empty-blast">
-        <div class="empty-icon"><i class="fa-solid fa-burst"></i></div>
-        <h3>Blast radius analysis</h3>
-        <p>Will show all upstream sources and downstream assets affected by this incident.</p>
-      </div>
-      <div id="blast-content" style="display:none"></div>
-    </div>
+      function showTab(name) {
+        const names = ["diagnosis", "blast", "dbt", "contract", "postmortem"];
+        document
+          .querySelectorAll(".aria-tab")
+          .forEach((t, i) => t.classList.toggle("active", names[i] === name));
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((c) => c.classList.toggle("active", c.id === `tab-${name}`));
+      }
 
-    <div class="tab-content" id="tab-dbt">
-      <div class="empty-state" id="empty-dbt">
-        <div class="empty-icon"><i class="fa-solid fa-wrench"></i></div>
-        <h3>dbt Fix Artifact</h3>
-        <p>ARIA generates production-ready SQL using real schema pulled from DataHub.</p>
-      </div>
-      <div id="dbt-content" style="display:none"></div>
-    </div>
+      function setStep(n, status, detail) {
+        const el = document.getElementById(`step-${n}`);
+        if (!el) return;
+        el.className = `step ${status}`;
+        const icon = el.querySelector(".step-icon");
+        const icons = [
+          "fa-microchip",
+          "fa-database",
+          "fa-brain",
+          "fa-code",
+          "fa-arrow-up-from-bracket",
+          "fa-flag-checkered",
+        ];
+        if (status === "done") {
+          icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+        } else if (status === "active") {
+          icon.innerHTML = `<i class="fa-solid ${icons[n - 1]} fa-spin-pulse"></i>`;
+        } else {
+          icon.innerHTML = `<i class="fa-solid ${icons[n - 1]}"></i>`;
+        }
+        if (detail)
+          document.getElementById(`step-${n}-detail`).textContent = detail;
+      }
 
-    <div class="tab-content" id="tab-contract">
-      <div class="empty-state" id="empty-contract">
-        <div class="empty-icon"><i class="fa-solid fa-file-contract"></i></div>
-        <h3>Data Contract</h3>
-        <p>A DataHub contract that would have caught this incident before production.</p>
-      </div>
-      <div id="contract-content" style="display:none"></div>
-    </div>
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
 
-    <div class="tab-content" id="tab-postmortem">
-      <div class="empty-state" id="empty-postmortem">
-        <div class="empty-icon"><i class="fa-solid fa-scroll"></i></div>
-        <h3>Postmortem</h3>
-        <p>A structured blameless incident report ready for Confluence or Notion.</p>
-      </div>
-      <div id="postmortem-content" style="display:none"></div>
-    </div>
-  </div>
-</div>
+      function renderMarkdown(md) {
+        return (
+          md
+            .replace(/^#### (.+)$/gm, "<h3>$1</h3>")
+            .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+            .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+            .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/`(.+?)`/g, "<code>$1</code>")
+            .replace(/^\* (.+)$/gm, "<li>$1</li>")
+            .replace(/^- (.+)$/gm, "<li>$1</li>")
+            .replace(/\n\n/g, "</p><p>") || md
+        );
+      }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-<script>
-const EXAMPLES = [
-  `ERROR in model fct_revenue (models/finance/fct_revenue.sql)\nCompilation Error\nunknown column 'payment_method_v2' in 'field list'\n\nTraceback: models/finance/fct_revenue.sql referenced column payment_method_v2 which does not exist in source table raw.payments.\nThe source table schema was recently modified. Run aborted.`,
-  `[2024-05-15 02:14:33] DAG daily_revenue_pipeline FAILED\nTask: check_data_freshness\n\nAssertionError: Table analytics.prod.fct_daily_revenue has not been updated in 36 hours.\nLast refresh: 2024-05-13 18:02:11 UTC\nSLA breached: data must refresh every 24h\nDownstream dashboards: Revenue KPIs, Executive Summary, Finance Board View`,
-  `MLflow training job ml-churn-model-v4 FAILED at step: feature_extraction\n\nKeyError: 'user_churn_score_v3'\nFeature column 'user_churn_score_v3' not found in feature store dataset ml_features_prod.\nAvailable columns: user_churn_score_v2, user_engagement_score, ltv_30d`
-];
-
-function loadExample(idx) {
-  document.getElementById('errorInput').value = EXAMPLES[idx];
-  document.getElementById('errorInput').focus();
-}
-
-function showTab(name) {
-  const names = ['diagnosis','blast','dbt','contract','postmortem'];
-  document.querySelectorAll('.aria-tab').forEach((t,i) => t.classList.toggle('active', names[i] === name));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${name}`));
-}
-
-function setStep(n, status, detail) {
-  const el = document.getElementById(`step-${n}`);
-  if (!el) return;
-  el.className = `step ${status}`;
-  const icon = el.querySelector('.step-icon');
-  const icons = ['fa-microchip','fa-database','fa-brain','fa-code','fa-arrow-up-from-bracket','fa-flag-checkered'];
-  if (status === 'done') {
-    icon.innerHTML = '<i class="fa-solid fa-check"></i>';
-  } else {
-    icon.innerHTML = `<i class="fa-solid ${icons[n-1]}"></i>`;
-  }
-  if (detail) document.getElementById(`step-${n}-detail`).textContent = detail;
-}
-
-function escHtml(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-function renderMarkdown(md) {
-  return md
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
-    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/`(.+?)`/g,'<code>$1</code>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/\n\n/g,'</p><p>') || md;
-}
-
-function renderDiagnosis(report) {
-  const d = report.diagnosis;
-  document.getElementById('empty-diagnosis').style.display = 'none';
-  const el = document.getElementById('diagnosis-content');
-  el.style.display = 'block';
-  el.innerHTML = `
+      function renderDiagnosis(report) {
+        const d = report.diagnosis;
+        document.getElementById("empty-diagnosis").style.display = "none";
+        const el = document.getElementById("diagnosis-content");
+        el.style.display = "block";
+        el.innerHTML = `
     <div class="stat-grid">
       <div class="stat-box" style="animation-delay:0s">
         <div class="stat-label"><i class="fa-solid fa-stopwatch me-1"></i>Elapsed</div>
@@ -848,10 +1232,13 @@ function renderDiagnosis(report) {
     <div class="aria-card" style="animation-delay:0.18s">
       <div class="card-label"><i class="fa-solid fa-code-branch"></i>Breaking Change</div>
       <div class="d-flex gap-2 flex-wrap">
-        <span style="background:var(--accent-light);border:1px solid rgba(79,70,229,0.2);padding:3px 10px;border-radius:20px;font-size:11px;color:var(--accent);font-family:var(--mono);font-weight:500">${d.breakingChangeType}</span>
+        <span style="background:var(--accent-light);border:1px solid rgba(79,70,229,0.15);padding:3px 10px;border-radius:20px;font-size:11px;color:var(--accent);font-family:var(--mono);font-weight:500">
+  <i class="fa-solid ${d.breakingChangeType === "COLUMN_RENAMED" ? "fa-right-left" : d.breakingChangeType === "COLUMN_DROPPED" || d.breakingChangeType === "COLUMN_MISSING" ? "fa-trash-can" : d.breakingChangeType === "FRESHNESS_SLA_MISSED" ? "fa-clock" : d.breakingChangeType === "SCHEMA_EVOLUTION" ? "fa-code-branch" : "fa-triangle-exclamation"}" style="margin-right:4px"></i>
+  ${d.breakingChangeType}
+</span>
         <span style="background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:11px;color:var(--text2)">Source: <strong>${d.breakingChangeSource}</strong></span>
       </div>
-      ${d.affectedColumns?.length ? `<p style="margin-top:10px;font-size:11.5px;color:var(--muted)">Affected columns: <code>${d.affectedColumns.join(', ')}</code></p>` : ''}
+      ${d.affectedColumns?.length ? `<p style="margin-top:10px;font-size:11.5px;color:var(--muted)">Affected columns: <code>${d.affectedColumns.join(", ")}</code></p>` : ""}
     </div>
 
     <div class="aria-card" style="animation-delay:0.26s">
@@ -861,25 +1248,37 @@ function renderDiagnosis(report) {
 
     <div class="aria-card" style="animation-delay:0.34s">
       <div class="card-label"><i class="fa-solid fa-arrow-up-from-bracket"></i>DataHub Write-back</div>
-      ${report.writebackResults.incidents.map(i => `
-        <div class="incident-chip"><i class="fa-solid fa-circle-exclamation"></i>Incident raised on <strong>${i.asset}</strong></div><br>`).join('')}
-      ${report.writebackResults.tags.map(t => `
-        <div class="tag-chip"><i class="fa-solid fa-tag"></i>Tagged: <code style="background:none;border:none;padding:0;color:inherit">${t}</code></div><br>`).join('')}
-      ${!report.writebackResults.incidents.length && !report.writebackResults.tags.length
-        ? `<p style="color:var(--muted);font-size:11.5px">Connect DataHub to see real write-back</p>` : ''}
+      ${report.writebackResults.incidents
+        .map(
+          (i) => `
+        <div class="incident-chip"><i class="fa-solid fa-circle-exclamation"></i>Incident raised on <strong>${i.asset}</strong></div><br>`,
+        )
+        .join("")}
+      ${report.writebackResults.tags
+        .map(
+          (t) => `
+        <div class="tag-chip"><i class="fa-solid fa-tag"></i>Tagged: <code style="background:none;border:none;padding:0;color:inherit">${t}</code></div><br>`,
+        )
+        .join("")}
+      ${
+        !report.writebackResults.incidents.length &&
+        !report.writebackResults.tags.length
+          ? `<p style="color:var(--muted);font-size:11.5px">Connect DataHub to see real write-back</p>`
+          : ""
+      }
     </div>`;
-}
+      }
 
-function renderBlast(report) {
-  document.getElementById('empty-blast').style.display = 'none';
-  const el = document.getElementById('blast-content');
-  el.style.display = 'block';
-  const up = report.blastRadius.upstream || [];
-  const dn = report.blastRadius.downstream || [];
-  el.innerHTML = `
+      function renderBlast(report) {
+        document.getElementById("empty-blast").style.display = "none";
+        const el = document.getElementById("blast-content");
+        el.style.display = "block";
+        const up = report.blastRadius.upstream || [];
+        const dn = report.blastRadius.downstream || [];
+        el.innerHTML = `
     <div class="aria-card" style="border-color:rgba(79,70,229,0.2);background:var(--accent-light);animation-delay:0s">
       <div class="d-flex align-items-center gap-3">
-        <div style="font-size:30px;font-weight:800;color:var(--accent);letter-spacing:-0.04em">${up.length+dn.length}</div>
+        <div style="font-size:30px;font-weight:800;color:var(--accent);letter-spacing:-0.04em">${up.length + dn.length}</div>
         <div>
           <div style="font-weight:700;color:var(--text)">Total Assets in Blast Radius</div>
           <div style="font-size:11.5px;color:var(--text2)">${dn.length} downstream assets affected</div>
@@ -897,24 +1296,41 @@ function renderBlast(report) {
       Upstream Sources (${up.length})
     </div>
     <div class="asset-list mb-4">
-      ${up.length ? up.map((u,i)=>`
-  <div class="asset-item" style="animation-delay:${i*0.08}s;flex-direction:column;align-items:flex-start;gap:6px">
+      ${
+        up.length
+          ? up
+              .map(
+                (u, i) => `
+  <div class="asset-item" style="animation-delay:${i * 0.08}s;flex-direction:column;align-items:flex-start;gap:6px">
     <div class="d-flex align-items-center gap-2 w-100">
       <div class="asset-dot dot-upstream"></div>
       <div style="flex:1">
-        <div class="asset-name">${u.name||'unnamed'}</div>
+        <div class="asset-name">${u.name || "unnamed"}</div>
         <div class="asset-urn">${u.urn}</div>
       </div>
       <i class="fa-solid fa-database" style="color:var(--border-strong);font-size:11px"></i>
     </div>
-    ${u.fields?.length ? `
+    ${
+      u.fields?.length
+        ? `
       <div style="display:flex;flex-wrap:wrap;gap:4px;padding-left:16px">
-        ${u.fields.slice(0,6).map(f=>`
+        ${u.fields
+          .slice(0, 6)
+          .map(
+            (f) => `
           <span style="background:var(--accent-light);border:1px solid rgba(79,70,229,0.15);padding:2px 8px;border-radius:20px;font-size:10px;font-family:var(--mono);color:var(--accent)">${f.fieldPath}</span>
-        `).join('')}
-        ${u.fields.length > 6 ? `<span style="font-size:10px;color:var(--muted);padding:2px 4px">+${u.fields.length-6} more</span>` : ''}
-      </div>` : ''}
-  </div>`).join('') : '<p style="color:var(--muted);font-size:12px;padding:6px 0">No upstream lineage data</p>'}
+        `,
+          )
+          .join("")}
+        ${u.fields.length > 6 ? `<span style="font-size:10px;color:var(--muted);padding:2px 4px">+${u.fields.length - 6} more</span>` : ""}
+      </div>`
+        : ""
+    }
+  </div>`,
+              )
+              .join("")
+          : '<p style="color:var(--muted);font-size:12px;padding:6px 0">No upstream lineage data</p>'
+      }
     </div>
 
     <div class="section-label mb-2">
@@ -922,24 +1338,32 @@ function renderBlast(report) {
       Downstream Consumers (${dn.length})
     </div>
     <div class="asset-list">
-      ${dn.length ? dn.map((d,i)=>`
-        <div class="asset-item" style="animation-delay:${i*0.08}s">
+      ${
+        dn.length
+          ? dn
+              .map(
+                (d, i) => `
+        <div class="asset-item" style="animation-delay:${i * 0.08}s">
           <div class="asset-dot dot-downstream"></div>
           <div style="flex:1">
-            <div class="asset-name">${d.name||'unnamed'}</div>
+            <div class="asset-name">${d.name || "unnamed"}</div>
             <div class="asset-urn">${d.urn}</div>
           </div>
           <i class="fa-solid fa-table" style="color:var(--border-strong);font-size:11px"></i>
-        </div>`).join('') : '<p style="color:var(--muted);font-size:12px;padding:6px 0">No downstream lineage data</p>'}
+        </div>`,
+              )
+              .join("")
+          : '<p style="color:var(--muted);font-size:12px;padding:6px 0">No downstream lineage data</p>'
+      }
     </div>`;
-}
+      }
 
-function renderDbt(report) {
-  document.getElementById('empty-dbt').style.display = 'none';
-  const el = document.getElementById('dbt-content');
-  el.style.display = 'block';
-  const fix = report.artifacts.dbtFix;
-  el.innerHTML = `
+      function renderDbt(report) {
+        document.getElementById("empty-dbt").style.display = "none";
+        const el = document.getElementById("dbt-content");
+        el.style.display = "block";
+        const fix = report.artifacts.dbtFix;
+        el.innerHTML = `
     <div class="aria-card">
       <div class="card-label"><i class="fa-solid fa-circle-info"></i>Change Description</div>
       <p style="font-size:12.5px;color:var(--text2)">${fix.changeDescription}</p>
@@ -962,14 +1386,14 @@ function renderDbt(report) {
       <div class="card-label"><i class="fa-solid fa-code-pull-request"></i>PR / Migration Note</div>
       <p style="font-size:12.5px;color:var(--text2)">${fix.migrationNote}</p>
     </div>`;
-}
+      }
 
-function renderContract(report) {
-  document.getElementById('empty-contract').style.display = 'none';
-  const el = document.getElementById('contract-content');
-  el.style.display = 'block';
-  const yaml = report.artifacts.dataContract;
-  el.innerHTML = `
+      function renderContract(report) {
+        document.getElementById("empty-contract").style.display = "none";
+        const el = document.getElementById("contract-content");
+        el.style.display = "block";
+        const yaml = report.artifacts.dataContract;
+        el.innerHTML = `
     <div class="aria-card" style="border-color:rgba(5,150,105,0.2);background:var(--green-light)">
       <div class="card-label"><i class="fa-solid fa-shield-check" style="color:var(--green)"></i>About this contract</div>
       <p style="font-size:12.5px;color:var(--text2)">Generated by ARIA — defines the assertions that <strong style="color:var(--text)">would have caught this incident</strong> before it hit production. Register it with DataHub to prevent regressions.</p>
@@ -978,65 +1402,91 @@ function renderContract(report) {
       <button class="copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.textContent);this.innerHTML='<i class=\\'fa-solid fa-check\\'></i> Copied!';setTimeout(()=>this.innerHTML='<i class=\\'fa-solid fa-copy\\'></i> Copy',1500)">
         <i class="fa-solid fa-copy"></i> Copy
       </button>
-      <code>${escHtml(typeof yaml==='string'?yaml:JSON.stringify(yaml,null,2))}</code>
+      <code>${escHtml(typeof yaml === "string" ? yaml : JSON.stringify(yaml, null, 2))}</code>
     </div>`;
-}
-
-function renderPostmortem(report) {
-  document.getElementById('empty-postmortem').style.display = 'none';
-  const el = document.getElementById('postmortem-content');
-  el.style.display = 'block';
-  el.innerHTML = `<div class="postmortem">${renderMarkdown(report.artifacts.postmortem||'')}</div>`;
-}
-
-async function investigate() {
-  const errorMessage = document.getElementById('errorInput').value.trim();
-  if (!errorMessage) return;
-  const btn = document.getElementById('investigateBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Investigating…';
-  for (let i=1;i<=6;i++) setStep(i,'','');
-  try {
-    const res = await fetch('/api/investigate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({errorMessage})});
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const {done,value} = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value,{stream:true});
-      const events = buffer.split('\n\n');
-      buffer = events.pop();
-      for (const event of events) {
-        const lines = event.split('\n');
-        const typeLine = lines.find(l=>l.startsWith('event:'));
-        const dataLine = lines.find(l=>l.startsWith('data:'));
-        if (!dataLine) continue;
-        const type = typeLine?.slice(7).trim()||'message';
-        const payload = JSON.parse(dataLine.slice(5));
-        if (type==='progress') {
-          const prev=payload.step-1;
-          if(prev>=1) setStep(prev,'done',document.getElementById(`step-${prev}-detail`).textContent);
-          setStep(payload.step,'active',payload.message);
-        }
-        if (type==='complete') {
-          for(let i=1;i<=6;i++) setStep(i,'done');
-          renderDiagnosis(payload);renderBlast(payload);renderDbt(payload);renderContract(payload);renderPostmortem(payload);
-          showTab('diagnosis');
-        }
-        if (type==='error') alert('Investigation failed: '+payload.message);
       }
-    }
-  } catch(err) { alert('Failed to connect: '+err.message); }
-  finally {
-    btn.disabled=false;
-    btn.innerHTML='<i class="fa-solid fa-magnifying-glass"></i> Investigate with ARIA';
-  }
-}
 
-document.getElementById('errorInput').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) investigate();
-});
-</script>
-</body>
+      function renderPostmortem(report) {
+        document.getElementById("empty-postmortem").style.display = "none";
+        const el = document.getElementById("postmortem-content");
+        el.style.display = "block";
+        el.innerHTML = `<div class="postmortem">${renderMarkdown(report.artifacts.postmortem || "")}</div>`;
+      }
+
+      async function investigate() {
+        const errorMessage = document.getElementById("errorInput").value.trim();
+        if (!errorMessage) return;
+        const btn = document.getElementById("investigateBtn");
+        btn.disabled = true;
+        btn.innerHTML =
+          '<i class="fa-solid fa-spinner fa-spin"></i> Investigating…';
+        for (let i = 1; i <= 6; i++) setStep(i, "", "");
+        const stepTimers = {};
+        try {
+          const res = await fetch("/api/investigate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ errorMessage }),
+          });
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split("\n\n");
+            buffer = events.pop();
+            for (const event of events) {
+              const lines = event.split("\n");
+              const typeLine = lines.find((l) => l.startsWith("event:"));
+              const dataLine = lines.find((l) => l.startsWith("data:"));
+              if (!dataLine) continue;
+              const type = typeLine?.slice(7).trim() || "message";
+              const payload = JSON.parse(dataLine.slice(5));
+              if (type === "progress") {
+                const prev = payload.step - 1;
+                if (prev >= 1) {
+                  const elapsed = stepTimers[prev]
+                    ? ((Date.now() - stepTimers[prev]) / 1000).toFixed(1) + "s"
+                    : "";
+                  const prevDetail = document.getElementById(
+                    `step-${prev}-detail`,
+                  ).textContent;
+                  setStep(
+                    prev,
+                    "done",
+                    elapsed ? `${prevDetail} (${elapsed})` : prevDetail,
+                  );
+                }
+                stepTimers[payload.step] = Date.now();
+                setStep(payload.step, "active", payload.message);
+              }
+              if (type === "complete") {
+                for (let i = 1; i <= 6; i++) setStep(i, "done");
+                renderDiagnosis(payload);
+                renderBlast(payload);
+                renderDbt(payload);
+                renderContract(payload);
+                renderPostmortem(payload);
+                showTab("diagnosis");
+              }
+              if (type === "error")
+                alert("Investigation failed: " + payload.message);
+            }
+          }
+        } catch (err) {
+          alert("Failed to connect: " + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML =
+            '<i class="fa-solid fa-magnifying-glass"></i> Investigate with ARIA';
+        }
+      }
+
+      document.getElementById("errorInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) investigate();
+      });
+    </script>
+  </body>
 </html>
